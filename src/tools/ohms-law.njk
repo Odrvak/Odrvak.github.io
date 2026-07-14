@@ -1,0 +1,130 @@
+---
+layout: layout.njk
+tags: tool
+order: 1
+title: "Ohm's Law Calculator"
+summary: "Solve for voltage, current, or resistance from the other two."
+description: "Free Ohm's law calculator. Enter any two of voltage, current, and resistance to instantly solve for the third, with automatic unit prefixes."
+permalink: /tools/ohms-law/
+---
+<h1>Ohm's Law Calculator</h1>
+<p class="lede">Ohm's law relates voltage, current, and resistance: V = I &times; R. Pick what you want to solve for, fill in the other two fields, and the result updates as you type.</p>
+
+<div class="calc-card">
+  <div class="field-row">
+    <div class="field">
+      <label for="ohm-solve">Solve for</label>
+      <select id="ohm-solve">
+        <option value="R" selected>Resistance (R)</option>
+        <option value="V">Voltage (V)</option>
+        <option value="I">Current (I)</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="field-row">
+    <div class="field">
+      <label for="ohm-v">Voltage</label>
+      <div class="unit-input">
+        <input type="number" id="ohm-v" step="any" value="5">
+        <span class="unit-suffix">V</span>
+      </div>
+    </div>
+    <div class="field">
+      <label for="ohm-i">Current</label>
+      <div class="unit-input">
+        <input type="number" id="ohm-i" step="any" value="20">
+        <span class="unit-suffix">mA</span>
+      </div>
+    </div>
+    <div class="field">
+      <label for="ohm-r">Resistance</label>
+      <div class="unit-input">
+        <input type="number" id="ohm-r" step="any" value="220">
+        <span class="unit-suffix">&Omega;</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="result">
+    <div class="label" id="ohm-result-label">Resistance</div>
+    <div class="value"><span id="ohm-result-value">-</span></div>
+  </div>
+  <p class="hint" id="ohm-power-hint"></p>
+</div>
+
+<h2>The formula</h2>
+<table>
+  <tr><th>To find</th><th>Formula</th></tr>
+  <tr><td>Voltage</td><td>V = I &times; R</td></tr>
+  <tr><td>Current</td><td>I = V &divide; R</td></tr>
+  <tr><td>Resistance</td><td>R = V &divide; I</td></tr>
+</table>
+<p class="hint">Power dissipated in the resistor is P = V &times; I, shown above once all three values are known.</p>
+
+<script>
+(function () {
+  var solve = document.getElementById('ohm-solve');
+  var vInput = document.getElementById('ohm-v');
+  var iInput = document.getElementById('ohm-i');
+  var rInput = document.getElementById('ohm-r');
+  var resultLabel = document.getElementById('ohm-result-label');
+  var resultValue = document.getElementById('ohm-result-value');
+  var powerHint = document.getElementById('ohm-power-hint');
+  var fields = { V: vInput, I: iInput, R: rInput };
+  var labels = { V: 'Voltage', I: 'Current', R: 'Resistance' };
+
+  function fmt(n) {
+    if (!isFinite(n)) return '-';
+    return (Math.round(n * 10000) / 10000).toString();
+  }
+
+  function updateDisabled() {
+    var target = solve.value;
+    Object.keys(fields).forEach(function (key) {
+      fields[key].disabled = key === target;
+    });
+  }
+
+  function calculate() {
+    var target = solve.value;
+    var V = parseFloat(vInput.value);
+    var I_mA = parseFloat(iInput.value);
+    var R = parseFloat(rInput.value);
+    var I = I_mA / 1000; // amps
+    var out = NaN;
+
+    if (target === 'R' && isFinite(V) && isFinite(I) && I !== 0) {
+      out = V / I;
+      rInput.value = fmt(out);
+    } else if (target === 'V' && isFinite(I) && isFinite(R)) {
+      out = I * R;
+      vInput.value = fmt(out);
+    } else if (target === 'I' && isFinite(V) && isFinite(R) && R !== 0) {
+      out = (V / R) * 1000; // back to mA
+      iInput.value = fmt(out);
+    }
+
+    resultLabel.textContent = labels[target];
+    var displayVal = target === 'R' ? fmt(V / I) : (target === 'V' ? fmt(I * R) : fmt((V / R) * 1000));
+    var unit = target === 'R' ? ' Ω' : (target === 'V' ? ' V' : ' mA');
+    resultValue.textContent = isFinite(out) ? fmt(out) + unit : '-';
+
+    var Vf = parseFloat(vInput.value);
+    var If = parseFloat(iInput.value) / 1000;
+    if (isFinite(Vf) && isFinite(If)) {
+      powerHint.textContent = 'Power dissipated: ' + fmt(Vf * If) + ' W';
+    } else {
+      powerHint.textContent = '';
+    }
+  }
+
+  solve.addEventListener('change', function () { updateDisabled(); calculate(); });
+  [vInput, iInput, rInput].forEach(function (el) {
+    el.addEventListener('input', calculate);
+  });
+
+  updateDisabled();
+  calculate();
+})();
+</script>

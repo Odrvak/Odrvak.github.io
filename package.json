@@ -1,0 +1,16 @@
+{
+  "name": "circuitcalc",
+  "version": "1.0.0",
+  "description": "Free calculators and reference tools for embedded and electronics engineers.",
+  "private": true,
+  "scripts": {
+    "build": "eleventy",
+    "serve": "eleventy --serve",
+    "watch": "eleventy --watch"
+  },
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@11ty/eleventy": "^3.1.6"
+  }
+}

@@ -1,0 +1,147 @@
+---
+layout: layout.njk
+tags: tool
+order: 2
+title: "Resistor Color Code Calculator"
+summary: "Decode 4-band and 5-band resistor colors into ohms and tolerance."
+description: "Free resistor color code calculator for 4-band and 5-band resistors. Select the bands and get the resistance value and tolerance instantly."
+permalink: /tools/resistor-color-code/
+---
+<h1>Resistor Color Code Calculator</h1>
+<p class="lede">Choose 4-band or 5-band, set each color, and read the resistance and tolerance below.</p>
+
+<div class="calc-card">
+  <div class="field-row">
+    <div class="field">
+      <label for="rc-bands">Band count</label>
+      <select id="rc-bands">
+        <option value="4">4 band</option>
+        <option value="5" selected>5 band</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="field-row" id="rc-digit-fields"></div>
+  <div class="field-row">
+    <div class="field">
+      <label for="rc-multiplier">Multiplier</label>
+      <select id="rc-multiplier"></select>
+    </div>
+    <div class="field">
+      <label for="rc-tolerance">Tolerance</label>
+      <select id="rc-tolerance"></select>
+    </div>
+  </div>
+
+  <div class="result">
+    <div class="label">Resistance</div>
+    <div class="value"><span id="rc-result-value">-</span></div>
+  </div>
+  <p class="hint" id="rc-range-hint"></p>
+</div>
+
+<h2>How to read the bands</h2>
+<p>The first two (4-band) or three (5-band) bands are significant digits, the next band is a multiplier (power of ten), and the last band is tolerance. Orient the resistor with the tolerance band (usually gold or silver) on the right.</p>
+
+<script>
+(function () {
+  var DIGIT_COLORS = [
+    { name: 'Black', hex: '#2b2b2b', digit: 0 },
+    { name: 'Brown', hex: '#8b4a1f', digit: 1 },
+    { name: 'Red', hex: '#d1332f', digit: 2 },
+    { name: 'Orange', hex: '#e07b1a', digit: 3 },
+    { name: 'Yellow', hex: '#e8c62a', digit: 4 },
+    { name: 'Green', hex: '#3a8f4a', digit: 5 },
+    { name: 'Blue', hex: '#2e5fac', digit: 6 },
+    { name: 'Violet', hex: '#7b4fa6', digit: 7 },
+    { name: 'Grey', hex: '#8a8a8a', digit: 8 },
+    { name: 'White', hex: '#f2f2f2', digit: 9 }
+  ];
+  var MULTIPLIER_COLORS = DIGIT_COLORS.concat([
+    { name: 'Gold', hex: '#c9a227', mult: 0.1 },
+    { name: 'Silver', hex: '#c0c0c0', mult: 0.01 }
+  ]).map(function (c) {
+    return { name: c.name, hex: c.hex, mult: c.mult !== undefined ? c.mult : Math.pow(10, c.digit) };
+  });
+  var TOLERANCE_COLORS = [
+    { name: 'Brown', pct: 1 },
+    { name: 'Red', pct: 2 },
+    { name: 'Green', pct: 0.5 },
+    { name: 'Blue', pct: 0.25 },
+    { name: 'Violet', pct: 0.1 },
+    { name: 'Grey', pct: 0.05 },
+    { name: 'Gold', pct: 5 },
+    { name: 'Silver', pct: 10 }
+  ];
+
+  var bandsSelect = document.getElementById('rc-bands');
+  var digitFields = document.getElementById('rc-digit-fields');
+  var multSelect = document.getElementById('rc-multiplier');
+  var tolSelect = document.getElementById('rc-tolerance');
+  var resultValue = document.getElementById('rc-result-value');
+  var rangeHint = document.getElementById('rc-range-hint');
+
+  function fillSelect(select, items, labelFn, defaultIndex) {
+    select.innerHTML = '';
+    items.forEach(function (item, idx) {
+      var opt = document.createElement('option');
+      opt.value = idx;
+      opt.textContent = labelFn(item);
+      if (idx === defaultIndex) opt.selected = true;
+      select.appendChild(opt);
+    });
+  }
+
+  function buildDigitFields() {
+    var count = parseInt(bandsSelect.value, 10) === 5 ? 3 : 2;
+    digitFields.innerHTML = '';
+    for (var i = 0; i < count; i++) {
+      var field = document.createElement('div');
+      field.className = 'field';
+      var label = document.createElement('label');
+      label.textContent = 'Band ' + (i + 1);
+      var select = document.createElement('select');
+      select.className = 'rc-digit-select';
+      field.appendChild(label);
+      field.appendChild(select);
+      digitFields.appendChild(field);
+      fillSelect(select, DIGIT_COLORS, function (c) { return c.name; }, i === 0 ? 1 : (i === 1 ? 0 : 0));
+      select.addEventListener('change', calculate);
+    }
+  }
+
+  function fmtOhms(value) {
+    if (!isFinite(value)) return '-';
+    if (value >= 1e6) return (value / 1e6).toFixed(2).replace(/\.?0+$/, '') + ' MΩ';
+    if (value >= 1e3) return (value / 1e3).toFixed(2).replace(/\.?0+$/, '') + ' kΩ';
+    return (Math.round(value * 100) / 100) + ' Ω';
+  }
+
+  function calculate() {
+    var digitSelects = digitFields.querySelectorAll('.rc-digit-select');
+    var digits = Array.prototype.map.call(digitSelects, function (sel) {
+      return DIGIT_COLORS[parseInt(sel.value, 10)].digit;
+    });
+    var significant = 0;
+    digits.forEach(function (d) { significant = significant * 10 + d; });
+
+    var mult = MULTIPLIER_COLORS[parseInt(multSelect.value, 10)].mult;
+    var tolerance = TOLERANCE_COLORS[parseInt(tolSelect.value, 10)].pct;
+    var resistance = significant * mult;
+
+    resultValue.textContent = fmtOhms(resistance) + ' ± ' + tolerance + '%';
+    var low = resistance * (1 - tolerance / 100);
+    var high = resistance * (1 + tolerance / 100);
+    rangeHint.textContent = 'Acceptable range: ' + fmtOhms(low) + ' to ' + fmtOhms(high);
+  }
+
+  bandsSelect.addEventListener('change', function () { buildDigitFields(); calculate(); });
+  fillSelect(multSelect, MULTIPLIER_COLORS, function (c) { return c.name + ' (×' + c.mult + ')'; }, 1);
+  fillSelect(tolSelect, TOLERANCE_COLORS, function (c) { return c.name + ' (±' + c.pct + '%)'; }, 6);
+  multSelect.addEventListener('change', calculate);
+  tolSelect.addEventListener('change', calculate);
+
+  buildDigitFields();
+  calculate();
+})();
+</script>

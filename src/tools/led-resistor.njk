@@ -1,0 +1,101 @@
+---
+layout: layout.njk
+tags: tool
+order: 4
+title: "LED Series Resistor Calculator"
+summary: "Get the resistor value and power rating for a safe LED current."
+description: "LED series resistor calculator. Enter supply voltage, LED forward voltage, number of LEDs, and target current to get the resistor value and power rating."
+permalink: /tools/led-resistor/
+---
+<h1>LED Series Resistor Calculator</h1>
+<p class="lede">Find the current-limiting resistor for one or more LEDs in series: R = (Vsupply - n &times; Vled) / Iled.</p>
+
+<div class="calc-card">
+  <div class="field-row">
+    <div class="field">
+      <label for="led-vsupply">Supply voltage</label>
+      <div class="unit-input"><input type="number" id="led-vsupply" step="any" value="5"><span class="unit-suffix">V</span></div>
+    </div>
+    <div class="field">
+      <label for="led-vf">LED forward voltage</label>
+      <div class="unit-input"><input type="number" id="led-vf" step="any" value="2"><span class="unit-suffix">V</span></div>
+    </div>
+  </div>
+  <div class="field-row">
+    <div class="field">
+      <label for="led-count">LEDs in series</label>
+      <input type="number" id="led-count" step="1" min="1" value="1">
+    </div>
+    <div class="field">
+      <label for="led-current">Target current</label>
+      <div class="unit-input"><input type="number" id="led-current" step="any" value="20"><span class="unit-suffix">mA</span></div>
+    </div>
+  </div>
+
+  <div class="result">
+    <div class="label">Resistor value</div>
+    <div class="value"><span id="led-result-value">-</span></div>
+  </div>
+  <p class="hint" id="led-power-hint"></p>
+  <p class="hint" id="led-warning" style="color:#c0392b;"></p>
+</div>
+
+<h2>Choosing a power rating</h2>
+<p>Pick a standard resistor power rating at least 2x the calculated dissipation for headroom: 1/8W, 1/4W, 1/2W, 1W, or 2W.</p>
+
+<script>
+(function () {
+  var vsupply = document.getElementById('led-vsupply');
+  var vf = document.getElementById('led-vf');
+  var count = document.getElementById('led-count');
+  var current = document.getElementById('led-current');
+  var resultValue = document.getElementById('led-result-value');
+  var powerHint = document.getElementById('led-power-hint');
+  var warning = document.getElementById('led-warning');
+  var STANDARD_RATINGS = [0.125, 0.25, 0.5, 1, 2];
+
+  function fmt(n) {
+    if (!isFinite(n)) return '-';
+    return (Math.round(n * 10000) / 10000).toString();
+  }
+
+  function pickRating(watts) {
+    for (var i = 0; i < STANDARD_RATINGS.length; i++) {
+      if (STANDARD_RATINGS[i] >= watts * 2) return STANDARD_RATINGS[i];
+    }
+    return STANDARD_RATINGS[STANDARD_RATINGS.length - 1];
+  }
+
+  function calculate() {
+    var Vs = parseFloat(vsupply.value);
+    var Vf = parseFloat(vf.value);
+    var n = parseInt(count.value, 10) || 1;
+    var I = parseFloat(current.value) / 1000;
+    var totalVf = Vf * n;
+    var drop = Vs - totalVf;
+
+    warning.textContent = '';
+    if (!isFinite(Vs) || !isFinite(Vf) || !isFinite(I) || I <= 0) {
+      resultValue.textContent = '-';
+      powerHint.textContent = '';
+      return;
+    }
+    if (drop <= 0) {
+      resultValue.textContent = '-';
+      powerHint.textContent = '';
+      warning.textContent = 'Supply voltage must exceed total LED forward voltage (' + fmt(totalVf) + ' V).';
+      return;
+    }
+
+    var R = drop / I;
+    var watts = drop * I;
+    var rating = pickRating(watts);
+
+    resultValue.textContent = fmt(R) + ' Ω';
+    powerHint.textContent = 'Power dissipated: ' + fmt(watts) + ' W - use a ' + rating + ' W resistor or higher.';
+  }
+
+  [vsupply, vf, count, current].forEach(function (el) { el.addEventListener('input', calculate); });
+  calculate();
+})();
+</script>

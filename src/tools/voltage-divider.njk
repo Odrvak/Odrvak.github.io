@@ -1,0 +1,119 @@
+---
+layout: layout.njk
+tags: tool
+order: 3
+title: "Voltage Divider Calculator"
+summary: "Find Vout, or solve for the resistor you need to hit a target voltage."
+description: "Voltage divider calculator. Enter input voltage and two resistor values to get output voltage, or solve for the resistor needed to hit a target output voltage."
+permalink: /tools/voltage-divider/
+---
+<h1>Voltage Divider Calculator</h1>
+<p class="lede">A voltage divider splits an input voltage across two series resistors: Vout = Vin &times; R2 / (R1 + R2). Pick what to solve for and fill in the rest.</p>
+
+<div class="calc-card">
+  <div class="field-row">
+    <div class="field">
+      <label for="vd-solve">Solve for</label>
+      <select id="vd-solve">
+        <option value="Vout" selected>Output voltage (Vout)</option>
+        <option value="R2">R2 (bottom resistor)</option>
+        <option value="R1">R1 (top resistor)</option>
+      </select>
+    </div>
+  </div>
+  <div class="field-row">
+    <div class="field">
+      <label for="vd-vin">Input voltage (Vin)</label>
+      <div class="unit-input"><input type="number" id="vd-vin" step="any" value="5"><span class="unit-suffix">V</span></div>
+    </div>
+    <div class="field">
+      <label for="vd-vout">Output voltage (Vout)</label>
+      <div class="unit-input"><input type="number" id="vd-vout" step="any" value="3.3"><span class="unit-suffix">V</span></div>
+    </div>
+  </div>
+  <div class="field-row">
+    <div class="field">
+      <label for="vd-r1">R1 (top, Vin to Vout)</label>
+      <div class="unit-input"><input type="number" id="vd-r1" step="any" value="10000"><span class="unit-suffix">&Omega;</span></div>
+    </div>
+    <div class="field">
+      <label for="vd-r2">R2 (bottom, Vout to GND)</label>
+      <div class="unit-input"><input type="number" id="vd-r2" step="any" value="20000"><span class="unit-suffix">&Omega;</span></div>
+    </div>
+  </div>
+
+  <div class="result">
+    <div class="label" id="vd-result-label">Output voltage</div>
+    <div class="value"><span id="vd-result-value">-</span></div>
+  </div>
+  <p class="hint" id="vd-current-hint"></p>
+</div>
+
+<h2>Circuit reference</h2>
+<p>Vin connects to R1, R1 connects to the Vout node, and R2 connects from Vout down to ground. This calculator ignores loading from whatever is attached at Vout - keep R1 and R2 small relative to that load's impedance, or the real output will sag below the calculated value.</p>
+
+<script>
+(function () {
+  var solve = document.getElementById('vd-solve');
+  var vin = document.getElementById('vd-vin');
+  var vout = document.getElementById('vd-vout');
+  var r1 = document.getElementById('vd-r1');
+  var r2 = document.getElementById('vd-r2');
+  var resultLabel = document.getElementById('vd-result-label');
+  var resultValue = document.getElementById('vd-result-value');
+  var currentHint = document.getElementById('vd-current-hint');
+  var labels = { Vout: 'Output voltage', R2: 'R2', R1: 'R1' };
+  var fields = { Vout: vout, R2: r2, R1: r1 };
+
+  function fmt(n) {
+    if (!isFinite(n)) return '-';
+    return (Math.round(n * 10000) / 10000).toString();
+  }
+
+  function updateDisabled() {
+    var target = solve.value;
+    Object.keys(fields).forEach(function (key) {
+      fields[key].disabled = key === target;
+    });
+  }
+
+  function calculate() {
+    var target = solve.value;
+    var Vin = parseFloat(vin.value);
+    var Vout = parseFloat(vout.value);
+    var R1 = parseFloat(r1.value);
+    var R2 = parseFloat(r2.value);
+    var out = NaN, unit = '';
+
+    if (target === 'Vout' && isFinite(Vin) && isFinite(R1) && isFinite(R2) && (R1 + R2) !== 0) {
+      out = Vin * R2 / (R1 + R2);
+      vout.value = fmt(out);
+      unit = ' V';
+    } else if (target === 'R2' && isFinite(Vin) && isFinite(Vout) && isFinite(R1) && (Vin - Vout) !== 0) {
+      out = (Vout * R1) / (Vin - Vout);
+      r2.value = fmt(out);
+      unit = ' Ω';
+    } else if (target === 'R1' && isFinite(Vin) && isFinite(Vout) && isFinite(R2) && Vout !== 0) {
+      out = (R2 * (Vin - Vout)) / Vout;
+      r1.value = fmt(out);
+      unit = ' Ω';
+    }
+
+    resultLabel.textContent = labels[target];
+    resultValue.textContent = isFinite(out) ? fmt(out) + unit : '-';
+
+    var R1f = parseFloat(r1.value), R2f = parseFloat(r2.value), Vinf = parseFloat(vin.value);
+    if (isFinite(R1f) && isFinite(R2f) && isFinite(Vinf) && (R1f + R2f) !== 0) {
+      currentHint.textContent = 'Divider current: ' + fmt((Vinf / (R1f + R2f)) * 1000) + ' mA';
+    } else {
+      currentHint.textContent = '';
+    }
+  }
+
+  solve.addEventListener('change', function () { updateDisabled(); calculate(); });
+  [vin, vout, r1, r2].forEach(function (el) { el.addEventListener('input', calculate); });
+
+  updateDisabled();
+  calculate();
+})();
+</script>

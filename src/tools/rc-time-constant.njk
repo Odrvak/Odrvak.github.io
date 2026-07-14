@@ -1,0 +1,85 @@
+---
+layout: layout.njk
+tags: tool
+order: 5
+title: "RC Time Constant Calculator"
+summary: "Get tau and the charge/discharge timeline for a resistor-capacitor circuit."
+description: "RC time constant calculator. Enter resistance and capacitance to get tau and a charge/discharge timing table (63.2%, 86.5%, 95%, 98.2%, 99.3%)."
+permalink: /tools/rc-time-constant/
+---
+<h1>RC Time Constant Calculator</h1>
+<p class="lede">The RC time constant, tau = R &times; C, sets how fast a capacitor charges or discharges through a resistor.</p>
+
+<div class="calc-card">
+  <div class="field-row">
+    <div class="field">
+      <label for="rc-resistance">Resistance</label>
+      <div class="unit-input"><input type="number" id="rc-resistance" step="any" value="10000"><span class="unit-suffix">&Omega;</span></div>
+    </div>
+    <div class="field">
+      <label for="rc-capacitance">Capacitance</label>
+      <div class="unit-input"><input type="number" id="rc-capacitance" step="any" value="100"><span class="unit-suffix">&micro;F</span></div>
+    </div>
+  </div>
+
+  <div class="result">
+    <div class="label">Time constant (tau)</div>
+    <div class="value"><span id="rc-tau-value">-</span></div>
+  </div>
+
+  <table>
+    <tr><th>Time elapsed</th><th>Charging (% of Vin)</th><th>Discharging (% remaining)</th></tr>
+    <tr><td id="rc-t1">-</td><td>63.2%</td><td>36.8%</td></tr>
+    <tr><td id="rc-t2">-</td><td>86.5%</td><td>13.5%</td></tr>
+    <tr><td id="rc-t3">-</td><td>95.0%</td><td>5.0%</td></tr>
+    <tr><td id="rc-t4">-</td><td>98.2%</td><td>1.8%</td></tr>
+    <tr><td id="rc-t5">-</td><td>99.3%</td><td>0.7%</td></tr>
+  </table>
+</div>
+
+<h2>Why 5 tau</h2>
+<p>After 5 time constants a capacitor is considered fully charged or discharged for most practical purposes (99.3%), which is why "5RC" shows up so often as a settling-time rule of thumb.</p>
+
+<script>
+(function () {
+  var rInput = document.getElementById('rc-resistance');
+  var cInput = document.getElementById('rc-capacitance');
+  var tauValue = document.getElementById('rc-tau-value');
+  var rows = [
+    document.getElementById('rc-t1'),
+    document.getElementById('rc-t2'),
+    document.getElementById('rc-t3'),
+    document.getElementById('rc-t4'),
+    document.getElementById('rc-t5')
+  ];
+
+  function fmtTime(seconds) {
+    if (!isFinite(seconds)) return '-';
+    if (seconds < 1e-6) return (seconds * 1e9).toFixed(2) + ' ns';
+    if (seconds < 1e-3) return (seconds * 1e6).toFixed(2) + ' µs';
+    if (seconds < 1) return (seconds * 1e3).toFixed(2) + ' ms';
+    return seconds.toFixed(3) + ' s';
+  }
+
+  function calculate() {
+    var R = parseFloat(rInput.value);
+    var C_uF = parseFloat(cInput.value);
+    var C = C_uF / 1e6;
+    var tau = R * C;
+
+    if (!isFinite(tau) || tau <= 0) {
+      tauValue.textContent = '-';
+      rows.forEach(function (row) { row.textContent = '-'; });
+      return;
+    }
+
+    tauValue.textContent = fmtTime(tau);
+    for (var i = 0; i < 5; i++) {
+      rows[i].textContent = fmtTime(tau * (i + 1));
+    }
+  }
+
+  [rInput, cInput].forEach(function (el) { el.addEventListener('input', calculate); });
+  calculate();
+})();
+</script>
