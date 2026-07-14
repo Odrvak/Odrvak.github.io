@@ -3,6 +3,6 @@ module.exports = {
   tagline: "Calculators and reference tools for embedded and electronics engineers",
   description:
     "Free, fast calculators for electronics and embedded engineering: Ohm's law, resistor color codes, voltage dividers, LED resistors, and RC time constants.",
-  url: "https://REPLACE-WITH-USERNAME.github.io",
+  url: "https://Odrvak.github.io",
   year: new Date().getFullYear()
 };
