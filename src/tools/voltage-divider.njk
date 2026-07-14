@@ -6,6 +6,8 @@ title: "Voltage Divider Calculator"
 summary: "Find Vout, or solve for the resistor you need to hit a target voltage."
 description: "Voltage divider calculator. Enter input voltage and two resistor values to get output voltage, or solve for the resistor needed to hit a target output voltage."
 permalink: /tools/voltage-divider/
+icon: |
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4"/><rect x="9" y="6" width="6" height="6" rx="1.2"/><path d="M12 12v3"/><rect x="9" y="15" width="6" height="6" rx="1.2"/><path d="M15 18h4"/></svg>
 ---
 <h1>Voltage Divider Calculator</h1>
 <p class="lede">A voltage divider splits an input voltage across two series resistors: Vout = Vin &times; R2 / (R1 + R2). Pick what to solve for and fill in the rest.</p>
@@ -13,12 +15,12 @@ permalink: /tools/voltage-divider/
 <div class="calc-card">
   <div class="field-row">
     <div class="field">
-      <label for="vd-solve">Solve for</label>
-      <select id="vd-solve">
-        <option value="Vout" selected>Output voltage (Vout)</option>
-        <option value="R2">R2 (bottom resistor)</option>
-        <option value="R1">R1 (top resistor)</option>
-      </select>
+      <label>Solve for</label>
+      <div class="segmented" id="vd-solve" role="group">
+        <button type="button" data-value="Vout" class="active">Vout</button>
+        <button type="button" data-value="R2">R2</button>
+        <button type="button" data-value="R1">R1</button>
+      </div>
     </div>
   </div>
   <div class="field-row">
@@ -55,6 +57,8 @@ permalink: /tools/voltage-divider/
 <script>
 (function () {
   var solve = document.getElementById('vd-solve');
+  var solveButtons = solve.querySelectorAll('button');
+  var solveValue = 'Vout';
   var vin = document.getElementById('vd-vin');
   var vout = document.getElementById('vd-vout');
   var r1 = document.getElementById('vd-r1');
@@ -71,14 +75,14 @@ permalink: /tools/voltage-divider/
   }
 
   function updateDisabled() {
-    var target = solve.value;
+    var target = solveValue;
     Object.keys(fields).forEach(function (key) {
       fields[key].disabled = key === target;
     });
   }
 
   function calculate() {
-    var target = solve.value;
+    var target = solveValue;
     var Vin = parseFloat(vin.value);
     var Vout = parseFloat(vout.value);
     var R1 = parseFloat(r1.value);
@@ -110,7 +114,14 @@ permalink: /tools/voltage-divider/
     }
   }
 
-  solve.addEventListener('change', function () { updateDisabled(); calculate(); });
+  solveButtons.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      solveValue = btn.dataset.value;
+      solveButtons.forEach(function (b) { b.classList.toggle('active', b === btn); });
+      updateDisabled();
+      calculate();
+    });
+  });
   [vin, vout, r1, r2].forEach(function (el) { el.addEventListener('input', calculate); });
 
   updateDisabled();

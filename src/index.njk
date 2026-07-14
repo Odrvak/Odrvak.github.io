@@ -4,12 +4,16 @@ title: null
 description: "Free, fast calculators and reference tools for embedded systems and electronics engineering: Ohm's law, resistor color codes, voltage dividers, LED resistors, and RC time constants."
 permalink: /
 ---
-<h1>{{ site.name }}</h1>
-<p class="lede">{{ site.tagline }}. No sign-up, no install, everything runs in your browser.</p>
+<div class="hero">
+  <div class="hero-rule"></div>
+  <h1>{{ site.name }}</h1>
+  <p class="lede">{{ site.tagline }}. No sign-up, no install, everything runs in your browser.</p>
+</div>
 
 <div class="tool-grid">
 {% for tool in collections.toolsSorted %}
   <a class="tool-card" href="{{ tool.url }}">
+    <span class="tool-icon">{{ tool.data.icon | safe }}</span>
     <h3>{{ tool.data.title }}</h3>
     <p>{{ tool.data.summary }}</p>
   </a>

@@ -6,6 +6,8 @@ title: "Resistor Color Code Calculator"
 summary: "Decode 4-band and 5-band resistor colors into ohms and tolerance."
 description: "Free resistor color code calculator for 4-band and 5-band resistors. Select the bands and get the resistance value and tolerance instantly."
 permalink: /tools/resistor-color-code/
+icon: |
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h4M18 12h4"/><rect x="6" y="7" width="12" height="10" rx="2"/><path d="M9 7v10M12 7v10M15 7v10"/></svg>
 ---
 <h1>Resistor Color Code Calculator</h1>
 <p class="lede">Choose 4-band or 5-band, set each color, and read the resistance and tolerance below.</p>
@@ -13,11 +15,11 @@ permalink: /tools/resistor-color-code/
 <div class="calc-card">
   <div class="field-row">
     <div class="field">
-      <label for="rc-bands">Band count</label>
-      <select id="rc-bands">
-        <option value="4">4 band</option>
-        <option value="5" selected>5 band</option>
-      </select>
+      <label>Band count</label>
+      <div class="segmented" id="rc-bands" role="group">
+        <button type="button" data-value="4">4 Band</button>
+        <button type="button" data-value="5" class="active">5 Band</button>
+      </div>
     </div>
   </div>
 
@@ -74,7 +76,9 @@ permalink: /tools/resistor-color-code/
     { name: 'Silver', pct: 10 }
   ];
 
-  var bandsSelect = document.getElementById('rc-bands');
+  var bandsControl = document.getElementById('rc-bands');
+  var bandsButtons = bandsControl.querySelectorAll('button');
+  var bandsValue = '5';
   var digitFields = document.getElementById('rc-digit-fields');
   var multSelect = document.getElementById('rc-multiplier');
   var tolSelect = document.getElementById('rc-tolerance');
@@ -93,7 +97,7 @@ permalink: /tools/resistor-color-code/
   }
 
   function buildDigitFields() {
-    var count = parseInt(bandsSelect.value, 10) === 5 ? 3 : 2;
+    var count = bandsValue === '5' ? 3 : 2;
     digitFields.innerHTML = '';
     for (var i = 0; i < count; i++) {
       var field = document.createElement('div');
@@ -135,7 +139,14 @@ permalink: /tools/resistor-color-code/
     rangeHint.textContent = 'Acceptable range: ' + fmtOhms(low) + ' to ' + fmtOhms(high);
   }
 
-  bandsSelect.addEventListener('change', function () { buildDigitFields(); calculate(); });
+  bandsButtons.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      bandsValue = btn.dataset.value;
+      bandsButtons.forEach(function (b) { b.classList.toggle('active', b === btn); });
+      buildDigitFields();
+      calculate();
+    });
+  });
   fillSelect(multSelect, MULTIPLIER_COLORS, function (c) { return c.name + ' (×' + c.mult + ')'; }, 1);
   fillSelect(tolSelect, TOLERANCE_COLORS, function (c) { return c.name + ' (±' + c.pct + '%)'; }, 6);
   multSelect.addEventListener('change', calculate);

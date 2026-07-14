@@ -6,6 +6,8 @@ title: "Ohm's Law Calculator"
 summary: "Solve for voltage, current, or resistance from the other two."
 description: "Free Ohm's law calculator. Enter any two of voltage, current, and resistance to instantly solve for the third, with automatic unit prefixes."
 permalink: /tools/ohms-law/
+icon: |
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h3l2-5 4 10 4-10 2 5h3"/></svg>
 ---
 <h1>Ohm's Law Calculator</h1>
 <p class="lede">Ohm's law relates voltage, current, and resistance: V = I &times; R. Pick what you want to solve for, fill in the other two fields, and the result updates as you type.</p>
@@ -13,12 +15,12 @@ permalink: /tools/ohms-law/
 <div class="calc-card">
   <div class="field-row">
     <div class="field">
-      <label for="ohm-solve">Solve for</label>
-      <select id="ohm-solve">
-        <option value="R" selected>Resistance (R)</option>
-        <option value="V">Voltage (V)</option>
-        <option value="I">Current (I)</option>
-      </select>
+      <label>Solve for</label>
+      <div class="segmented" id="ohm-solve" role="group">
+        <button type="button" data-value="R" class="active">Resistance</button>
+        <button type="button" data-value="V">Voltage</button>
+        <button type="button" data-value="I">Current</button>
+      </div>
     </div>
   </div>
 
@@ -65,6 +67,8 @@ permalink: /tools/ohms-law/
 <script>
 (function () {
   var solve = document.getElementById('ohm-solve');
+  var solveButtons = solve.querySelectorAll('button');
+  var solveValue = 'R';
   var vInput = document.getElementById('ohm-v');
   var iInput = document.getElementById('ohm-i');
   var rInput = document.getElementById('ohm-r');
@@ -80,14 +84,14 @@ permalink: /tools/ohms-law/
   }
 
   function updateDisabled() {
-    var target = solve.value;
+    var target = solveValue;
     Object.keys(fields).forEach(function (key) {
       fields[key].disabled = key === target;
     });
   }
 
   function calculate() {
-    var target = solve.value;
+    var target = solveValue;
     var V = parseFloat(vInput.value);
     var I_mA = parseFloat(iInput.value);
     var R = parseFloat(rInput.value);
@@ -119,7 +123,14 @@ permalink: /tools/ohms-law/
     }
   }
 
-  solve.addEventListener('change', function () { updateDisabled(); calculate(); });
+  solveButtons.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      solveValue = btn.dataset.value;
+      solveButtons.forEach(function (b) { b.classList.toggle('active', b === btn); });
+      updateDisabled();
+      calculate();
+    });
+  });
   [vInput, iInput, rInput].forEach(function (el) {
     el.addEventListener('input', calculate);
   });
